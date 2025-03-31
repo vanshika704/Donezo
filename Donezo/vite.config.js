@@ -9,6 +9,9 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      strategies: 'injectManifest', // ← Add this line
+      srcDir: 'public',            // ← Add this
+      filename: 'sw.js',  
       includeAssets: ['favicon.ico', 'alarm.mp3', 'icon-192.png', 'icon-512.png'],
       manifest: {
         name: 'Voice To-Do Alarm',
