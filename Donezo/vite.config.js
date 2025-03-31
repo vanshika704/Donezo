@@ -9,50 +9,50 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      strategies: 'injectManifest', 
-      srcDir: 'public',            
-      filename: 'sw.js',  
+      strategies: 'injectManifest',
+      srcDir: 'public',
+      filename: 'sw.js',
       injectManifest: {
-        injectionPoint: 'self.__WB_MANIFEST', // Must match what's in your SW file
+        injectionPoint: 'self.__WB_MANIFEST',
       },
       includeAssets: ['favicon.ico', 'alarm.mp3', 'icon-192.png', 'icon-512.png'],
       manifest: {
         name: 'Voice To-Do Alarm',
         short_name: 'VoiceAlarm',
         description: 'Voice-controlled reminder app with alarms',
-        start_url: '/',
+        start_url: './', // Ensuring correct URL handling
         display: 'standalone',
-        background_color: '#11161F', // Changed to match theme_color
+        background_color: '#11161F',
         theme_color: '#11161F',
         icons: [
           {
-            src: '/icon-192.png', // Added leading slash
+            src: '/icon-192.png',
             sizes: '192x192',
             type: 'image/png',
-            purpose: 'any maskable' // Added for better PWA support
+            purpose: 'any maskable',
           },
           {
-            src: '/icon-512.png', // Added leading slash
+            src: '/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
-          }
-        ]
+            purpose: 'any maskable',
+          },
+        ],
       },
       workbox: {
         maximumFileSizeToCacheInBytes: 5000000,
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3,woff2}'], // Expanded file types
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i, // Added common external cache
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-              }
-            }
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+            },
           },
           {
             urlPattern: /\/alarm\.mp3$/,
@@ -61,26 +61,22 @@ export default defineConfig({
               cacheName: 'audio-cache',
               expiration: {
                 maxEntries: 1,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-              }
-            }
-          }
-        ]
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+            },
+          },
+        ],
       },
       devOptions: {
-       
-        type: 'module',
-        navigateFallback: 'index.html'
-      }
-    })
+        navigateFallback: 'index.html', // Ensure SPA fallback works
+      },
+    }),
   ],
-  // Add these base configurations
-  base: '/',
+  base: './', // Ensures proper asset resolution in different environments
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
     emptyOutDir: true,
-   
   },
-  publicDir: 'public'
+  publicDir: 'public',
 });
