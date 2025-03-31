@@ -147,35 +147,6 @@ export function showNotification(title, options = {}) {
     });
   }
 }
-// Add these to your notifications.js file
-
-export function scheduleBackgroundSync() {
-  if ('serviceWorker' in navigator && 'SyncManager' in window) {
-    navigator.serviceWorker.ready.then(registration => {
-      registration.sync.register('sync-tasks').catch(err => {
-        console.log('Background Sync registration failed:', err);
-      });
-    });
-  }
-}
-
-export function checkAlarms(tasks, setTasks) {
-  const now = new Date();
-  tasks.forEach(task => {
-    if (task.time && !task.completed) {
-      const taskTime = new Date(task.time);
-      if (now >= taskTime) {
-        showNotification(`Reminder: ${task.text}`);
-        // Update task as completed
-        setTasks(prevTasks => 
-          prevTasks.map(t => 
-            t.id === task.id ? {...t, completed: true} : t
-          )
-        );
-      }
-    }
-  });
-}
 
 export function playAlarmSound() {
   stopAlarmSound(); // Ensure no previous sound is playing
@@ -204,7 +175,7 @@ export function playAlarmSound() {
   }
 
   // Fallback to HTML5 Audio
-  fallbackAudio = new Audio('./alarm.mp3');
+  fallbackAudio = new Audio('/alarm.mp3');
   fallbackAudio.play().catch(e => console.log('Audio playback failed:', e));
 }
 
