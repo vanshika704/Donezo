@@ -127,7 +127,14 @@ const ASSETS = [
   '/badge-72x72.png',
   '/manifest.json'
 ];
+// public/sw.js
+import { precacheAndRoute } from 'workbox-precaching';
 
+// Add this injection point
+self.__WB_MANIFEST;
+
+// Your existing service worker code
+precacheAndRoute(self.__WB_MANIFEST || []);
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)

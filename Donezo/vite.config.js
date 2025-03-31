@@ -12,6 +12,9 @@ export default defineConfig({
       strategies: 'injectManifest', 
       srcDir: 'public',            
       filename: 'sw.js',  
+      injectManifest: {
+        injectionPoint: 'self.__WB_MANIFEST', // Must match what's in your SW file
+      },
       includeAssets: ['favicon.ico', 'alarm.mp3', 'icon-192.png', 'icon-512.png'],
       manifest: {
         name: 'Voice To-Do Alarm',
