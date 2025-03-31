@@ -1,0 +1,16 @@
+{
+    "version": 2,
+    "routes": [
+      {
+        "src": "/sw.js",
+        "headers": {
+          "Service-Worker-Allowed": "/",
+          "Cache-Control": "public, max-age=0, must-revalidate"
+        }
+      },
+      {
+        "src": "/(.*)",
+        "dest": "/index.html"
+      }
+    ]
+  }
