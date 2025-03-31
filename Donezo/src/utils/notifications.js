@@ -204,7 +204,7 @@ export function playAlarmSound() {
   }
 
   // Fallback to HTML5 Audio
-  fallbackAudio = new Audio('/alarm.mp3');
+  fallbackAudio = new Audio('./alarm.mp3');
   fallbackAudio.play().catch(e => console.log('Audio playback failed:', e));
 }
 
