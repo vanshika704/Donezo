@@ -72,7 +72,7 @@ export default function App() {
               className="w-full h-screen object-cover opacity-90"
             />
             <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
-              <p className="text-sm text-purple-200">
+              <p className="text-lg text-purple-200">
                 "Speak your tasks, we'll handle the rest"
               </p>
             </div>
@@ -90,7 +90,7 @@ export default function App() {
               <VoiceInput onAddTask={addTask} />
             </div>
             
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex items-center justify-between ">
               <h2 className="text-2xl font-bold text-white flex items-center">
                 <span className="w-4 h-4 rounded-full bg-blue-500 mr-2"></span>
                 Your Tasks
@@ -100,10 +100,19 @@ export default function App() {
               </span>
             </div>
             
-            <div className="space-y-4">
+            {/* <div className="space-y-4">
               <TaskList tasks={tasks} onDelete={deleteTask} />
-            </div>
-            
+            </div> */}
+            <div className="space-y-4">
+            <div 
+  className="max-h-[250px] overflow-y-auto pr-2 scrollbar-thin scrollbar-track-gray-800/50"
+  style={{
+    scrollbarColor: '#ec4899 #27242FFF',
+  }}
+>
+  <TaskList tasks={tasks} onDelete={deleteTask} />
+</div>
+</div>
             {tasks.length === 0 && (
               <div className="text-center py-12">
                 <div className="text-gray-500 mb-4">
