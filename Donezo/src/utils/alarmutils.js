@@ -2,6 +2,8 @@
 // import { showNotification, storeTasksInDB } from "./notifications";
 // import { getTasksFromDB } from './notifications';
 
+import { getTasksFromDB, showNotification, storeTasksInDB } from "./notifications";
+
 // export async function checkAlarms(tasks, setTasks) {
 //   const now = new Date();
 //   const updatedTasks = tasks.map(task => {
@@ -251,15 +253,11 @@
 //   await checkAlarms([testTask]);
 // }
 /////////////////////////////////////////////////////////////////////
-import { showNotification } from "./notifications.js";
-import { getTasksFromDB, storeTasksInDB } from "./notifications.js";
-
-// Global state
 let alarmCheckInterval;
 let isSpeaking = false;
 let voicesLoaded = false;
 
-// Voice initialization
+// Voice initialization with retry
 function loadVoices() {
   return new Promise((resolve) => {
     const voices = window.speechSynthesis?.getVoices();
@@ -267,15 +265,22 @@ function loadVoices() {
       voicesLoaded = true;
       resolve();
     } else {
-      window.speechSynthesis.onvoiceschanged = () => {
-        voicesLoaded = true;
-        resolve();
+      const checkVoices = () => {
+        const availableVoices = window.speechSynthesis.getVoices();
+        if (availableVoices.length > 0) {
+          voicesLoaded = true;
+          resolve();
+        } else {
+          setTimeout(checkVoices, 100);
+        }
       };
+      window.speechSynthesis.onvoiceschanged = checkVoices;
+      checkVoices();
     }
   });
 }
 
-// Enhanced alarm checking
+// Mobile-optimized alarm checking
 export async function checkAlarms(tasks, setTasks) {
   const now = new Date();
   const updatedTasks = [];
@@ -292,13 +297,18 @@ export async function checkAlarms(tasks, setTasks) {
 
     if (isDue) {
       needsUpdate = true;
-      showNotification(`Alarm: ${task.text}`, {
-        body: 'Your scheduled task is due now!',
-        vibrate: [200, 100, 200, 100, 200]
-      });
+      try {
+        await showNotification(`Alarm: ${task.text}`, {
+          body: 'Your scheduled task is due now!',
+          vibrate: [200, 100, 200, 100, 200],
+          requireInteraction: true
+        });
 
-      if (!isSpeaking) {
-        await speakTask(task.text);
+        if (!isSpeaking) {
+          await speakTask(task.text);
+        }
+      } catch (error) {
+        console.error('Notification failed:', error);
       }
 
       updatedTasks.push({ ...task, completed: true });
@@ -314,31 +324,36 @@ export async function checkAlarms(tasks, setTasks) {
   }
 }
 
-// Robust text-to-speech
+// Reliable text-to-speech with error handling
 async function speakTask(text) {
   if (!('speechSynthesis' in window)) return;
 
-  if (!voicesLoaded) await loadVoices();
-  window.speechSynthesis.cancel();
+  try {
+    if (!voicesLoaded) await loadVoices();
+    window.speechSynthesis.cancel();
 
-  const utterance = new SpeechSynthesisUtterance(`Reminder: ${text}`);
-  utterance.volume = 1;
-  utterance.rate = 0.9;
-  utterance.pitch = 1.1;
+    const utterance = new SpeechSynthesisUtterance(`Reminder: ${text}`);
+    utterance.volume = 1;
+    utterance.rate = 0.9;
+    utterance.pitch = 1.1;
 
-  const voices = window.speechSynthesis.getVoices();
-  const voice = voices.find(v => v.lang.includes('en')) || voices[0];
-  if (voice) utterance.voice = voice;
+    const voices = window.speechSynthesis.getVoices();
+    const voice = voices.find(v => v.lang.includes('en')) || voices[0];
+    if (voice) utterance.voice = voice;
 
-  isSpeaking = true;
-  utterance.onend = utterance.onerror = () => {
+    isSpeaking = true;
+    utterance.onend = utterance.onerror = () => {
+      isSpeaking = false;
+    };
+
+    window.speechSynthesis.speak(utterance);
+  } catch (error) {
+    console.error('Speech synthesis failed:', error);
     isSpeaking = false;
-  };
-
-  window.speechSynthesis.speak(utterance);
+  }
 }
 
-// Reliable background sync
+// Background sync with retry
 export async function scheduleBackgroundSync() {
   if (!('serviceWorker' in navigator)) return;
 
@@ -346,14 +361,17 @@ export async function scheduleBackgroundSync() {
     const registration = await navigator.serviceWorker.ready;
     if ('sync' in registration) {
       await registration.sync.register('alarm-sync');
+    } else {
+      // Fallback for browsers without background sync
+      setTimeout(checkAlarms, 30000);
     }
   } catch (error) {
-    console.error('Sync failed:', error);
-    setTimeout(scheduleBackgroundSync, 30000);
+    console.error('Sync registration failed:', error);
+    setTimeout(scheduleBackgroundSync, 60000);
   }
 }
 
-// Interval management
+// Interval management with visibility awareness
 export function setupAlarmCheckInterval(setTasks) {
   if ('speechSynthesis' in window) loadVoices();
 
@@ -363,26 +381,32 @@ export function setupAlarmCheckInterval(setTasks) {
   // Initial check
   getTasksFromDB().then(tasks => checkAlarms(tasks, setTasks));
 
-  // Set new interval
-  alarmCheckInterval = setInterval(() => {
-    getTasksFromDB().then(tasks => checkAlarms(tasks, setTasks));
-  }, 60000);
+  // Set new interval with visibility awareness
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      // More frequent checks when visible
+      alarmCheckInterval = setInterval(() => {
+        getTasksFromDB().then(tasks => checkAlarms(tasks, setTasks));
+      }, 30000);
+    } else {
+      // Less frequent checks when hidden
+      clearInterval(alarmCheckInterval);
+      alarmCheckInterval = setInterval(() => {
+        getTasksFromDB().then(tasks => checkAlarms(tasks, setTasks));
+      }, 60000);
+    }
+  };
+
+  // Set initial interval
+  handleVisibilityChange();
+  document.addEventListener('visibilitychange', handleVisibilityChange);
 
   // Cleanup function
   return () => {
     clearInterval(alarmCheckInterval);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
   };
-}
-
-// Test utility
-export async function testAlarm() {
-  await checkAlarms([{
-    id: 'test-' + Date.now(),
-    text: 'Test alarm',
-    time: new Date().toISOString(),
-    completed: false
-  }]);
 }

@@ -181,7 +181,7 @@
 //   });
 // }
 
-const CACHE_NAME = 'alarm-cache-v5';
+const CACHE_NAME = 'alarm-cache-v6';
 const ASSETS = [
   '/',
   '/index.html',
@@ -192,6 +192,7 @@ const ASSETS = [
   '/manifest.json'
 ];
 
+// Enhanced install handler
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -200,6 +201,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
+// Improved activate handler
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
@@ -210,48 +212,84 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Background alarm checker
+// Robust alarm checking with push fallback
 const checkAlarms = async () => {
-  const db = await openDB();
-  const tasks = await getAllTasks(db);
-  const now = new Date();
+  try {
+    const db = await openDB();
+    const tasks = await getAllTasks(db);
+    const now = new Date();
+    const dueTasks = tasks.filter(task => 
+      task.time && new Date(task.time) <= now && !task.completed
+    );
 
-  tasks.forEach(task => {
-    if (task.time && new Date(task.time) <= now && !task.completed) {
-      self.registration.showNotification(`Alarm: ${task.text}`, {
-        body: 'Your task is due!',
-        icon: '/icon-192.png',
-        vibrate: [200,100,200,100,200],
-        tag: `alarm-${task.id}`,
-        data: { taskId: task.id }
+    if (dueTasks.length > 0) {
+      // Show notification for each due task
+      dueTasks.forEach(task => {
+        self.registration.showNotification(`Alarm: ${task.text}`, {
+          body: 'Your task is due!',
+          icon: '/icon-192.png',
+          badge: '/badge-72.png',
+          vibrate: [200,100,200,100,200],
+          tag: `alarm-${task.id}`,
+          data: { taskId: task.id },
+          requireInteraction: true
+        });
+      });
+
+      // Inform all clients to play alarm sound
+      const clients = await self.clients.matchAll();
+      clients.forEach(client => {
+        client.postMessage({
+          type: 'alarmTriggered',
+          tasks: dueTasks
+        });
+      });
+
+      // Mark tasks as completed
+      const tx = db.transaction('tasks', 'readwrite');
+      const store = tx.objectStore('tasks');
+      dueTasks.forEach(task => {
+        store.put({ ...task, completed: true });
       });
     }
-  });
+  } catch (error) {
+    console.error('Alarm check failed:', error);
+  }
 };
 
-// Check every minute
-setInterval(checkAlarms, 60000);
+// Message handler for foreground checks
+self.addEventListener('message', (event) => {
+  if (event.data.type === 'checkAlarmsNow') {
+    checkAlarms();
+  }
+});
 
-// Stop alarm when notification clicked
+// Notification click handler
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil(
-    self.clients.matchAll()
+    self.clients.matchAll({ type: 'window' })
       .then(clients => {
-        if (clients.length) clients[0].focus();
-        else self.clients.openWindow('/');
-        // Send stop command
-        clients.forEach(client => 
-          client.postMessage({ type: 'stopAlarm' })
-        );
+        if (clients.length > 0) {
+          clients[0].focus();
+        } else {
+          self.clients.openWindow('/');
+        }
       })
   );
+});
+
+// Background sync handler
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'alarm-sync') {
+    event.waitUntil(checkAlarms());
+  }
 });
 
 // IndexedDB helpers
 const openDB = () => {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('tasksDB', 1);
+    const request = indexedDB.open('tasksDB', 2);
     request.onupgradeneeded = (e) => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains('tasks')) {
