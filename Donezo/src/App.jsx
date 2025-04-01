@@ -1,12 +1,12 @@
 
 import { useEffect } from 'react';
 import VoiceInput from './components/VoiceInput';
-import TaskList from './components/TaskList';
 import useLocalStorage from './hooks/uselocalstorage';
 
 import productivityImage  from './assets/ai-generated-8876528_1280.png';
 import { storeTasksInDB } from './utils/notifications';
 import { checkAlarms, scheduleBackgroundSync } from './utils/alarmutils';
+import TaskList from './components/TaskList';
 export default function App() {
   const [tasks, setTasks] = useLocalStorage('voice-todo-tasks', []);
 

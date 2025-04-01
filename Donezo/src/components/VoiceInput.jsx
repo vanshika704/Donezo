@@ -103,7 +103,8 @@
 //   );
 // }
 import { useState } from 'react';
-import { parseTimeFromText } from '../utils/timeParser';
+import parseTimeFromText from '../utils/timeParser';
+
 
 
 export default function VoiceInput({ onAddTask }) {

@@ -11,7 +11,7 @@ const TIME_PATTERNS = [
   /(noon|midnight)/i
 ]
 
-export const parseTimeFromText = (text) => {
+ const parseTimeFromText = (text) => {
   let time = null
   let cleanedText = text.trim()
 
@@ -70,3 +70,4 @@ export const parseTimeFromText = (text) => {
 
   return { cleanedText, time }
 }
+export default parseTimeFromText;
