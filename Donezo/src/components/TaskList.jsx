@@ -1,6 +1,8 @@
 
 
+
 // import { format, isToday, isTomorrow } from 'date-fns';
+// import { stopAlarmSound } from '../utils/notifications';
 
 // export default function TaskList({ tasks, onDelete }) {
 //   const formatTime = (date) => {
@@ -9,13 +11,16 @@
 //     return format(date, 'MMM d, h:mm a');
 //   };
 
+//   const handleDelete = (id) => {
+//     onDelete(id);
+//     stopAlarmSound(); // Stop alarm when a task is deleted
+//   };
+
 //   return (
 //     <div className="max-w-md mx-auto">
 //       <h2 className="text-2xl font-bold mb-4 text-gray-800">Your Reminders</h2>
 //       {tasks.length === 0 ? (
-//         <div className="text-center py-2">
-          
-//         </div>
+//         <div className="text-center py-2"></div>
 //       ) : (
 //         <ul className="space-y-3">
 //           {tasks.map(task => (
@@ -37,7 +42,7 @@
 //                 )}
 //               </div>
 //               <button
-//                 onClick={() => onDelete(task.id)}
+//                 onClick={() => handleDelete(task.id)}
 //                 className="ml-4 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors duration-150"
 //                 aria-label="Delete reminder"
 //               >
@@ -53,16 +58,17 @@
 //   );
 // }
 
-
 import { format, isToday, isTomorrow } from 'date-fns';
 import { stopAlarmSound } from '../utils/notifications';
 
 export default function TaskList({ tasks, onDelete }) {
   const formatTime = (date) => {
-    if (isToday(date)) return `Today at ${format(date, 'h:mm a')}`;
-    if (isTomorrow(date)) return `Tomorrow at ${format(date, 'h:mm a')}`;
-    return format(date, 'MMM d, h:mm a');
+    const dateObj = new Date(date); // Ensure it's a Date object
+    if (isToday(dateObj)) return `Today at ${format(dateObj, 'h:mm a')}`;
+    if (isTomorrow(dateObj)) return `Tomorrow at ${format(dateObj, 'h:mm a')}`;
+    return format(dateObj, 'MMM d, h:mm a');
   };
+  
 
   const handleDelete = (id) => {
     onDelete(id);
@@ -73,7 +79,7 @@ export default function TaskList({ tasks, onDelete }) {
     <div className="max-w-md mx-auto">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">Your Reminders</h2>
       {tasks.length === 0 ? (
-        <div className="text-center py-2"></div>
+        <div className="text-center py-2">No reminders</div>
       ) : (
         <ul className="space-y-3">
           {tasks.map(task => (
