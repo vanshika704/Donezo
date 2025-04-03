@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import VoiceInput from './components/voiceinput';
+import VoiceInput from './components/VoiceInput';
 import useLocalStorage from './hooks/uselocalstorage';
 import productivityImage from './assets/ai-generated-8876528_1280.png';
 import { stopAlarmSound, storeTasksInDB } from './utils/notifications';
